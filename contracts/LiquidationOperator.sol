@@ -179,6 +179,12 @@ contract LiquidationOperator is IUniswapV2Callee {
         // TODO: (optional) initialize your contract
         //   *** Your code here ***
         // END TODO
+        // set the uniswap address pair to eth usdt
+        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        uniswap_pair = IUniswapV2Factory(
+            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
+        ).getPair(WETH, USDT);
     }
 
     // TODO: add a `receive` function so that you can withdraw your WETH
