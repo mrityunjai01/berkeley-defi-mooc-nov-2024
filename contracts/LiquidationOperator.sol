@@ -300,7 +300,7 @@ contract LiquidationOperator is IUniswapV2Callee {
         // console.log("eth_balance %d", eth_balance);
         require(eth_balance >= eth_needed, "not enough eth");
         IERC20 WETH_token = IERC20(WETH);
-        WETH_token.approve(msg.sender, eth_out);
+        WETH_token.approve(msg.sender, eth_needed);
         WETH_token.transfer(msg.sender, eth_needed);
     }
 }
