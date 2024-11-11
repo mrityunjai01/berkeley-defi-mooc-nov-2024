@@ -230,18 +230,16 @@ contract LiquidationOperator is IUniswapV2Callee {
         // console.log("health factor: %d", healthFactor);
         // console.log("total debt: %d", total_debt_eth);
         // console.log("total collateral: %d", total_col);
+
         require(
             healthFactor < 1 * 10 ** health_factor_decimals,
             "health factor is too high"
         );
 
-        require(uniswap_eth_usdt_pair != address(0), "pair not found");
         IUniswapV2Pair pair = IUniswapV2Pair(uniswap_eth_usdt_pair);
 
         // find amount needed using eth usdt pair
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
-        uint256 amount_needed = getAmountIn(total_debt_eth, reserve1, reserve0);
-
         pair.swap(0, amount_needed, address(this), abi.encode("flash"));
 
         //    *** Your code here ***
