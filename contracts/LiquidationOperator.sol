@@ -178,6 +178,11 @@ contract LiquidationOperator is IUniswapV2Callee {
         amountIn = (numerator / denominator) + 1;
     }
 
+    address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+    address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+    address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address account_to_liquidate = 0x59CE4a2AC5bC3f5F225439B2993b86B42f6d3e9F;
+
     constructor() {
         // TODO: (optional) initialize your contract
         //   *** Your code here ***
