@@ -285,11 +285,15 @@ contract LiquidationOperator is IUniswapV2Callee {
         IUniswapV2Pair pair = IUniswapV2Pair(uniswap_btc_eth_pair);
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
         // find how much btc we got
-        uint256 btc_in = IERC20(WBTC).balanceOf(address(this));
+        uint256 btc_in = IERC20(WBTC).balanceOf(address(this)) - 100;
         // console.log("btc_in %d", btc_in);
+        require(btc_in > 0, "no btc in");
         uint256 eth_out = getAmountOut(btc_in, reserve0, reserve1);
-        pair.swap(0, eth_out, address(this), abi.encode("repay"));
         // console.log("eth_out %d", eth_out);
+        IERC20 BTC_token = IERC20(WBTC);
+        BTC_token.approve(uniswap_btc_eth_pair, btc_in);
+        BTC_token.transfer(uniswap_btc_eth_pair, btc_in);
+        pair.swap(0, eth_out, address(this), "");
 
         // find how much eth we need to repay for amount1 usdt
         pair = IUniswapV2Pair(uniswap_eth_usdt_pair);
