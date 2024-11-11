@@ -205,9 +205,8 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 1. get the target user account data & make sure it is liquidatable
         address lending_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
         ILendingPool pool = ILendingPool(lending_pool);
-        (, , , , , uint256 healthFactor) = pool.getUserAccountData(
-            address(this)
-        );
+        (, uint256 total_debt_eth, , , , uint256 healthFactor) = pool
+            .getUserAccountData(address(this));
         require(
             healthFactor < 1 * 10 ** health_factor_decimals,
             "health factor is too high"
@@ -219,6 +218,12 @@ contract LiquidationOperator is IUniswapV2Callee {
         );
         require(uniswap_pair != address(0), "pair not found");
         IUniswapV2Pair pair = IUniswapV2Pair(uniswap_pair);
+
+        // get reserves before we swap
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
+        // find how much we need for the swap, that is, how much USDT we need
+        uint256 amountIn = getAmountIn(1 * 10 ** 18, reserve0, reserve1);
+
         pair.swap(0, 0, address(this), abi.encode("flash"));
 
         //    *** Your code here ***
