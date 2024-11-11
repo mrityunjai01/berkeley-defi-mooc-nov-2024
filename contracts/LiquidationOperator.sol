@@ -132,6 +132,9 @@ interface IUniswapV2Pair {
 
 contract LiquidationOperator is IUniswapV2Callee {
     uint8 public constant health_factor_decimals = 18;
+    // uniswap pair
+    address uniswap_eth_usdt_pair;
+    address uniswap_btc_eth_pair;
 
     // TODO: define constants used in the contract including ERC-20 tokens, Uniswap Pairs, Aave lending pools, etc. */
     //    *** Your code here ***
@@ -182,9 +185,13 @@ contract LiquidationOperator is IUniswapV2Callee {
         // set the uniswap address pair to eth usdt
         address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
         address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-        uniswap_pair = IUniswapV2Factory(
+        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+        uniswap_eth_usdt_pair = IUniswapV2Factory(
             0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
         ).getPair(WETH, USDT);
+        uniswap_btc_eth_pair = IUniswapV2Factory(
+            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
+        ).getPair(WBTC, WETH);
     }
 
     // TODO: add a `receive` function so that you can withdraw your WETH
@@ -203,10 +210,7 @@ contract LiquidationOperator is IUniswapV2Callee {
 
         // 0. security checks and initializing variables
         //    *** Your code here
-        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
         address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        address uniswap_factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
         // 1. get the target user account data & make sure it is liquidatable
         address lending_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
@@ -218,19 +222,14 @@ contract LiquidationOperator is IUniswapV2Callee {
             "health factor is too high"
         );
 
-        address uniswap_pair = IUniswapV2Factory(uniswap_factory).getPair(
-            WETH,
-            USDT
-        );
-        require(uniswap_pair != address(0), "pair not found");
-        IUniswapV2Pair pair = IUniswapV2Pair(uniswap_pair);
+        require(uniswap_eth_usdt_pair != address(0), "pair not found");
+        IUniswapV2Pair pair = IUniswapV2Pair(uniswap_eth_usdt_pair);
 
-        // get reserves before we swap
+        // find amount needed using eth usdt pair
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
-        // find how much we need for the swap, that is, how much USDT we need
-        uint256 amountIn = getAmountIn(1 * 10 ** 18, reserve0, reserve1);
+        uint256 amount_needed = getAmountIn(total_debt_eth, reserve1, reserve0);
 
-        pair.swap(0, 0, address(this), abi.encode("flash"));
+        pair.swap(0, amount_needed, address(this), abi.encode("flash"));
 
         //    *** Your code here ***
 
@@ -242,8 +241,10 @@ contract LiquidationOperator is IUniswapV2Callee {
         //    *** Your code here ***
 
         // 3. Convert the profit into ETH and send back to sender
-        IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
-        payable(msg.sender).transfer(address(this).balance);
+        uint balance = IERC20(WETH).balanceOf(address(this));
+        IWETH(WETH).withdraw(balance);
+        (bool success, ) = msg.sender.call{value: balance}("");
+        require(success, "Transfer failed");
 
         // END TODO
     }
@@ -259,31 +260,30 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 2.0. security checks and initializing variables
         //    *** Your code here ***
         // 2.1 liquidate the target user
-        ILendingPool pool = ILendingPool(
-            0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9
-        );
         address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-        address WUSDT = 0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9;
-        pool.liquidationCall(WBTC, WUSDT, address(this), amount1, false);
-
-        //    *** Your code here ***
+        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        address aave_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+        IERC20 USDT_token = IERC20(USDT);
+        USDT_token.approve(aave_pool, amount1);
+        ILendingPool pool = ILendingPool(aave_pool);
+        // get btc collateral amount
+        pool.liquidationCall(WBTC, USDT, address(this), amount1, false);
         // 2.2 swap WBTC for other things or repay directly
         //    *** Your code here ***
-        // 2.3 repay
-        //    *** Your code here ***
-        // END TODO
-        address WBTC_WETH_pair = IUniswapV2Factory(
-            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
-        ).getPair(WBTC, WETH);
-        IUniswapV2Pair pair = IUniswapV2Pair(WBTC_WETH_pair);
+        IUniswapV2Pair pair = IUniswapV2Pair(uniswap_btc_eth_pair);
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
         // find how much btc we got
-        (uint btc_in, , , , ) = pool.getUserAccountData(address(this));
+        uint256 btc_in = IERC20(WBTC).balanceOf(address(this));
         uint256 eth_out = getAmountOut(btc_in, reserve0, reserve1);
         pair.swap(0, eth_out, address(this), abi.encode("repay"));
 
-        IERC20 USDT_token = IERC20(USDT);
-        USDT_token.approve(uniswap_pair, amount1);
-        USDT_token.transfer(uniswap_pair, amount1);
+        // find how much eth we need to repay for amount1 usdt
+        pair = IUniswapV2Pair(uniswap_eth_usdt_pair);
+        (reserve0, reserve1, ) = pair.getReserves();
+        uint256 eth_needed = getAmountIn(amount1, reserve0, reserve1);
+        IERC20 WETH_token = IERC20(WETH);
+        WETH_token.approve(msg.sender, eth_out);
+        WETH_token.transfer(msg.sender, eth_needed);
     }
 }
