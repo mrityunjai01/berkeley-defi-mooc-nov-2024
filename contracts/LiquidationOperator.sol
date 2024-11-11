@@ -266,5 +266,18 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 2.3 repay
         //    *** Your code here ***
         // END TODO
+        address WBTC_WETH_pair = IUniswapV2Factory(
+            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
+        ).getPair(WBTC, WETH);
+        IUniswapV2Pair pair = IUniswapV2Pair(WBTC_WETH_pair);
+        (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
+        // find how much btc we got
+        (uint btc_in, , , , ) = pool.getUserAccountData(address(this));
+        uint256 eth_out = getAmountOut(btc_in, reserve0, reserve1);
+        pair.swap(0, eth_out, address(this), abi.encode("repay"));
+
+        IERC20 USDT_token = IERC20(USDT);
+        USDT_token.approve(uniswap_pair, amount1);
+        USDT_token.transfer(uniswap_pair, amount1);
     }
 }
