@@ -218,8 +218,14 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 1. get the target user account data & make sure it is liquidatable
         address lending_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
         ILendingPool pool = ILendingPool(lending_pool);
-        (, uint256 total_debt_eth, , , , uint256 healthFactor) = pool
-            .getUserAccountData(address(this));
+        (
+            uint256 total_col,
+            uint256 total_debt_eth,
+            ,
+            ,
+            ,
+            uint256 healthFactor
+        ) = pool.getUserAccountData(account_to_liquidate);
         require(
             healthFactor < 1 * 10 ** health_factor_decimals,
             "health factor is too high"
@@ -271,7 +277,7 @@ contract LiquidationOperator is IUniswapV2Callee {
         USDT_token.approve(aave_pool, amount1);
         ILendingPool pool = ILendingPool(aave_pool);
         // get btc collateral amount
-        pool.liquidationCall(WBTC, USDT, address(this), amount1, false);
+        pool.liquidationCall(WBTC, USDT, account_to_liquidate, amount1, false);
         // 2.2 swap WBTC for other things or repay directly
         //    *** Your code here ***
         IUniswapV2Pair pair = IUniswapV2Pair(uniswap_btc_eth_pair);
