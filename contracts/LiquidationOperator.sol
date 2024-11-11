@@ -251,13 +251,9 @@ contract LiquidationOperator is IUniswapV2Callee {
         ILendingPool pool = ILendingPool(
             0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9
         );
-        pool.liquidationCall(
-            0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
-            0xdAC17F958D2ee523a2206206994597C13D831ec7,
-            address(this),
-            amount1,
-            false
-        );
+        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+        address WUSDT = 0x7Fc66500c84A76Ad7e9c93437bFc5Ac33E2DDaE9;
+        pool.liquidationCall(WBTC, WUSDT, address(this), amount1, false);
 
         //    *** Your code here ***
         // 2.2 swap WBTC for other things or repay directly
