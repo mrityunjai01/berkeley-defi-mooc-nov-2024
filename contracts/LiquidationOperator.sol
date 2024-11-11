@@ -38,7 +38,9 @@ interface ILendingPool {
      * @return ltv the loan to value of the user
      * @return healthFactor the current health factor of the user
      **/
-    function getUserAccountData(address user)
+    function getUserAccountData(
+        address user
+    )
         external
         view
         returns (
@@ -95,10 +97,10 @@ interface IUniswapV2Callee {
 // https://docs.uniswap.org/protocol/V2/reference/smart-contracts/factory
 interface IUniswapV2Factory {
     // Returns the address of the pair for tokenA and tokenB, if it has been created, else address(0).
-    function getPair(address tokenA, address tokenB)
-        external
-        view
-        returns (address pair);
+    function getPair(
+        address tokenA,
+        address tokenB
+    ) external view returns (address pair);
 }
 
 // https://github.com/Uniswap/v2-core/blob/master/contracts/interfaces/IUniswapV2Pair.sol
@@ -123,11 +125,7 @@ interface IUniswapV2Pair {
     function getReserves()
         external
         view
-        returns (
-            uint112 reserve0,
-            uint112 reserve1,
-            uint32 blockTimestampLast
-        );
+        returns (uint112 reserve0, uint112 reserve1, uint32 blockTimestampLast);
 }
 
 // ----------------------IMPLEMENTATION------------------------------
@@ -186,15 +184,43 @@ contract LiquidationOperator is IUniswapV2Callee {
     // TODO: add a `receive` function so that you can withdraw your WETH
     //   *** Your code here ***
     // END TODO
+    receive() external payable {
+        // Code goes here
+        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        // withdraw WETH
+        IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
+    }
 
     // required by the testing script, entry for your liquidation call
     function operate() external {
         // TODO: implement your liquidation logic
 
         // 0. security checks and initializing variables
-        //    *** Your code here ***
+        //    *** Your code here
+        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
+        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
+        address uniswap_factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
 
         // 1. get the target user account data & make sure it is liquidatable
+        address lending_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
+        ILendingPool pool = ILendingPool(lending_pool);
+        (, , , , , uint256 healthFactor) = pool.getUserAccountData(
+            address(this)
+        );
+        require(
+            healthFactor < 1 * 10 ** health_factor_decimals,
+            "health factor is too high"
+        );
+
+        address uniswap_pair = IUniswapV2Factory(uniswap_factory).getPair(
+            WETH,
+            USDT
+        );
+        require(uniswap_pair != address(0), "pair not found");
+        IUniswapV2Pair pair = IUniswapV2Pair(uniswap_pair);
+        pair.swap(0, 0, address(this), abi.encode("flash"));
+
         //    *** Your code here ***
 
         // 2. call flash swap to liquidate the target user
@@ -205,7 +231,8 @@ contract LiquidationOperator is IUniswapV2Callee {
         //    *** Your code here ***
 
         // 3. Convert the profit into ETH and send back to sender
-        //    *** Your code here ***
+        IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
+        payable(msg.sender).transfer(address(this).balance);
 
         // END TODO
     }
@@ -218,19 +245,25 @@ contract LiquidationOperator is IUniswapV2Callee {
         bytes calldata
     ) external override {
         // TODO: implement your liquidation logic
-
         // 2.0. security checks and initializing variables
         //    *** Your code here ***
-
         // 2.1 liquidate the target user
-        //    *** Your code here ***
+        ILendingPool pool = ILendingPool(
+            0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9
+        );
+        pool.liquidationCall(
+            0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2,
+            0xdAC17F958D2ee523a2206206994597C13D831ec7,
+            address(this),
+            amount1,
+            false
+        );
 
+        //    *** Your code here ***
         // 2.2 swap WBTC for other things or repay directly
         //    *** Your code here ***
-
         // 2.3 repay
         //    *** Your code here ***
-        
         // END TODO
     }
 }
