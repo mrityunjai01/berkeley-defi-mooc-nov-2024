@@ -269,9 +269,6 @@ contract LiquidationOperator is IUniswapV2Callee {
         // 2.0. security checks and initializing variables
         //    *** Your code here ***
         // 2.1 liquidate the target user
-        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
         address aave_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
         IERC20 USDT_token = IERC20(USDT);
         USDT_token.approve(aave_pool, amount1);
