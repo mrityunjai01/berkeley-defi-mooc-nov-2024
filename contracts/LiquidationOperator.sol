@@ -240,6 +240,11 @@ contract LiquidationOperator is IUniswapV2Callee {
 
         // find amount needed using eth usdt pair
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
+        uint256 amount_needed = getAmountIn(
+            total_debt_eth,
+            reserve1,
+            reserve0
+        ) / 15;
         pair.swap(0, amount_needed, address(this), abi.encode("flash"));
 
         //    *** Your code here ***
