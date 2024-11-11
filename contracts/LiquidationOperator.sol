@@ -188,15 +188,15 @@ contract LiquidationOperator is IUniswapV2Callee {
         //   *** Your code here ***
         // END TODO
         // set the uniswap address pair to eth usdt
-        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
-        address USDT = 0xdAC17F958D2ee523a2206206994597C13D831ec7;
-        address WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-        uniswap_eth_usdt_pair = IUniswapV2Factory(
-            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
-        ).getPair(WETH, USDT);
-        uniswap_btc_eth_pair = IUniswapV2Factory(
-            0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f
-        ).getPair(WBTC, WETH);
+        address uniswap_factory = 0x5C69bEe701ef814a2B6a3EDD4B1652CB9cc5aA6f;
+        uniswap_eth_usdt_pair = IUniswapV2Factory(uniswap_factory).getPair(
+            WETH,
+            USDT
+        );
+        uniswap_btc_eth_pair = IUniswapV2Factory(uniswap_factory).getPair(
+            WBTC,
+            WETH
+        );
     }
 
     // TODO: add a `receive` function so that you can withdraw your WETH
@@ -204,7 +204,6 @@ contract LiquidationOperator is IUniswapV2Callee {
     // END TODO
     receive() external payable {
         // Code goes here
-        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
         // withdraw WETH
         IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
     }
@@ -215,7 +214,6 @@ contract LiquidationOperator is IUniswapV2Callee {
 
         // 0. security checks and initializing variables
         //    *** Your code here
-        address WETH = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
 
         // 1. get the target user account data & make sure it is liquidatable
         address lending_pool = 0x7d2768dE32b0b80b7a3454c06BdAc94A69DDc7A9;
