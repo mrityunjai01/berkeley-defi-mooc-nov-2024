@@ -226,6 +226,10 @@ contract LiquidationOperator is IUniswapV2Callee {
             ,
             uint256 healthFactor
         ) = pool.getUserAccountData(account_to_liquidate);
+        // print health factor
+        // console.log("health factor: %d", healthFactor);
+        // console.log("total debt: %d", total_debt_eth);
+        // console.log("total collateral: %d", total_col);
         require(
             healthFactor < 1 * 10 ** health_factor_decimals,
             "health factor is too high"
@@ -274,6 +278,7 @@ contract LiquidationOperator is IUniswapV2Callee {
         USDT_token.approve(aave_pool, amount1);
         ILendingPool pool = ILendingPool(aave_pool);
         // get btc collateral amount
+        // console.log("amount1 %d", amount1);
         pool.liquidationCall(WBTC, USDT, account_to_liquidate, amount1, false);
         // 2.2 swap WBTC for other things or repay directly
         //    *** Your code here ***
@@ -281,13 +286,19 @@ contract LiquidationOperator is IUniswapV2Callee {
         (uint112 reserve0, uint112 reserve1, ) = pair.getReserves();
         // find how much btc we got
         uint256 btc_in = IERC20(WBTC).balanceOf(address(this));
+        // console.log("btc_in %d", btc_in);
         uint256 eth_out = getAmountOut(btc_in, reserve0, reserve1);
         pair.swap(0, eth_out, address(this), abi.encode("repay"));
+        // console.log("eth_out %d", eth_out);
 
         // find how much eth we need to repay for amount1 usdt
         pair = IUniswapV2Pair(uniswap_eth_usdt_pair);
         (reserve0, reserve1, ) = pair.getReserves();
         uint256 eth_needed = getAmountIn(amount1, reserve0, reserve1);
+        // console.log("eth_needed %d", eth_needed);
+        uint256 eth_balance = IERC20(WETH).balanceOf(address(this));
+        // console.log("eth_balance %d", eth_balance);
+        require(eth_balance >= eth_needed, "not enough eth");
         IERC20 WETH_token = IERC20(WETH);
         WETH_token.approve(msg.sender, eth_out);
         WETH_token.transfer(msg.sender, eth_needed);
