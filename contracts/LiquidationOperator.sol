@@ -205,7 +205,7 @@ contract LiquidationOperator is IUniswapV2Callee {
     receive() external payable {
         // Code goes here
         // withdraw WETH
-        IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
+        // IWETH(WETH).withdraw(IERC20(WETH).balanceOf(address(this)));
     }
 
     // required by the testing script, entry for your liquidation call
