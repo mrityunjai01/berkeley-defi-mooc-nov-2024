@@ -227,9 +227,9 @@ contract LiquidationOperator is IUniswapV2Callee {
             uint256 healthFactor
         ) = pool.getUserAccountData(account_to_liquidate);
         // print health factor
-        // console.log("health factor: %d", healthFactor);
-        // console.log("total debt: %d", total_debt_eth);
-        // console.log("total collateral: %d", total_col);
+        console.log("health factor: %d", healthFactor);
+        console.log("total debt: %d", total_debt_eth);
+        console.log("total collateral: %d", total_col);
 
         require(
             healthFactor < 1 * 10 ** health_factor_decimals,
@@ -244,7 +244,7 @@ contract LiquidationOperator is IUniswapV2Callee {
             total_debt_eth,
             reserve1,
             reserve0
-        ) / 15;
+        ) / 13;
         pair.swap(0, amount_needed, address(this), abi.encode("flash"));
 
         //    *** Your code here ***
